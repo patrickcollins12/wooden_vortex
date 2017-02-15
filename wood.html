@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>patricks wooden art</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				margin: 0px;
+				background-color: #000000;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="js/three.min.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="js/dat.gui.min.js"></script>
+
+		<script>
+			var camera, scene, renderer, startTime, object, pyramid;
+			function init() {
+                
+				camera = new THREE.PerspectiveCamera(
+						36, window.innerWidth / window.innerHeight, 0.25, 50 );
+				camera.position.set( 0, 2.3, 5 );
+				scene = new THREE.Scene();
+				
+                // Lights
+				scene.add( new THREE.AmbientLight( 0x505050 ) );
+                
+                var spotLight = new THREE.SpotLight( 0xffffff );
+                spotLight.angle = Math.PI / 5;
+                spotLight.penumbra = 0.2;
+                spotLight.position.set( 2, 3, 3 );
+                spotLight.castShadow = true;
+                spotLight.shadow.camera.near = 3;
+                spotLight.shadow.camera.far = 10;
+                spotLight.shadow.mapSize.width = 1024;
+                spotLight.shadow.mapSize.height = 1024;
+                scene.add( spotLight );
+                
+				var dirLight = new THREE.DirectionalLight( 0x55505a, 1 );
+				dirLight.position.set( 0, 3, 0 );
+				dirLight.castShadow = true;
+				dirLight.shadow.camera.near = 1;
+				dirLight.shadow.camera.far = 10;
+				dirLight.shadow.camera.right = 1;
+				dirLight.shadow.camera.left = - 1;
+				dirLight.shadow.camera.top	= 1;
+				dirLight.shadow.camera.bottom = - 1;
+				dirLight.shadow.mapSize.width = 1024;
+				dirLight.shadow.mapSize.height = 1024;
+				scene.add( dirLight );
+                
+ 
+				// Geometry
+				var material = new THREE.MeshPhongMaterial( {
+						color: 0x80ee10,
+						shininess: 100,
+						side: THREE.DoubleSide,
+					} ),
+					geometry = new THREE.TorusKnotGeometry( 0.4, 0.08, 95, 20 );
+                    
+				object = new THREE.Mesh( geometry, material );
+				object.castShadow = true;
+                
+                // scene.add( object );
+                
+                // Add frame
+				var material = new THREE.MeshPhongMaterial( {
+						color: 0xff4410,
+						shininess: 100,
+						side: THREE.DoubleSide,
+					} );
+                    
+                sides=15;
+                for (i = 0; i<sides; i++) {
+                    for (j = 0; j<sides; j++) {
+                        
+        				var material = new THREE.MeshPhongMaterial( {
+        						color: 0xff4410,
+        						shininess: 50,
+                                // side: THREE.DoubleSide,
+        					} );
+                            
+                        var hsl = material.color.getHSL();
+                        // material.color.setHSL(((i+1)*(j+1)/(sides*sides))*1.5,hsl.s,hsl.l);
+                        material.color.setHSL(i/sides*.25+.5,hsl.s,hsl.l*1.5);
+                        
+                        var pyramid_geom = new THREE.ConeGeometry( Math.sqrt(.5)/4, .25, 4 );
+                        pyramid_geom.rotateY(Math.PI / 4);
+                        // pyramid_geom.vertices[0].x += Math.sin(Math.PI*i/(sides-1)*3)/3;
+                        // pyramid_geom.vertices[0].z += Math.sin(Math.PI*j/(sides-1)*3)/3;
+                        shiftX = Math.sin(((Math.PI*i/(sides-1)))*1)/3;
+                        shiftZ = Math.cos(((Math.PI*j/(sides-1)))*1)/3;
+                        pyramid_geom.vertices[0].x += shiftX;
+                        pyramid_geom.vertices[0].z += shiftZ;
+                        
+                        // var k = (i*j)/(sides*sides);
+                        var k = (Math.abs(shiftX)+Math.abs(shiftZ));
+                        pyramid_geom.vertices[0].y += .75-(k*1.0);
+                        // pyramid_geom.vertices[0].y += k*.75;
+                        
+                        pyramid = new THREE.Mesh( pyramid_geom, material );
+                        // pyramid.castShadow = true;
+                        pyramid.position.y = 1;
+                        pyramid.position.z = (.25*j)-.25*sides/2;
+                        pyramid.position.x = (.25*i)-.25*sides/2;
+                        scene.add( pyramid );
+                    }
+                }
+                
+                // Ground
+				var ground = new THREE.Mesh(
+						new THREE.PlaneBufferGeometry( 9, 9, 1, 1 ),
+						new THREE.MeshPhongMaterial( {
+							color: 0xa0adaf, shininess: 150 } ) );
+                            
+				ground.rotation.x = - Math.PI / 2; // rotates X/Y to X/Z
+				ground.receiveShadow = true;
+				scene.add( ground );
+                
+				// Renderer
+				renderer = new THREE.WebGLRenderer();
+				renderer.shadowMap.enabled = true;
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				window.addEventListener( 'resize', onWindowResize, false );
+				document.body.appendChild( renderer.domElement );
+                
+				// Controls
+				var controls = new THREE.OrbitControls( camera, renderer.domElement );
+				controls.target.set( 0, 1, 0 );
+				controls.update();
+
+				// Start
+				startTime = Date.now();
+			}
+            
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+            
+			function animate() {
+				var currentTime = Date.now(),
+					time = ( currentTime - startTime ) / 1000;
+				requestAnimationFrame( animate );
+				object.position.y = 2;
+                // object.rotation.x = time * 0.5;
+                // object.rotation.y = time * 0.2;
+                // object.scale.setScalar( Math.cos( time ) * 0.125 + 0.875 );
+				renderer.render( scene, camera );
+			}
+            
+			init();
+			animate();
+		</script>
+
+	</body>
+</html>
